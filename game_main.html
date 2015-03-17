@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Carnival Plant</title>
+
+        <script type="text/javascript" src="https://code.createjs.com/createjs-2014.12.12.min.js"></script>
+        
+        <script src="src/gameScreen.js"></script>
+        <script src="src/titleScreen.js"></script>
+        <script src="src/gameEvent.js"></script>
+        <script src="src/TutorialScreen.js"></script>
+        <script src="src/Button.js"></script>
+        <script src="src/GameSound.js"></script>
+	<!-- We also provide hosted minified versions of all CreateJS libraries.
+	  http://code.createjs.com -->
+
+<script id="editable">
+	var stage, w, h, loader;
+        var cursor;
+        var bar;
+        var currentImage;
+        var loaderWidth=300;
+        var loaderColor;
+        var borderPadding;
+        var STAGE_WIDTH = 800;
+        var imageLoaded = false;
+        var tweenDone = true;
+        var gameSound = new GameSound();
+
+	function init() {
+		//examples.showDistractor();
+                var canvas = document.getElementById("testCanvas");
+		stage = new createjs.Stage("testCanvas");
+                stage.enableMouseOver();    // in order to have mouse rollover / roll out event, this must be called.
+
+		// grab canvas width and height for later calculations:
+		w = stage.canvas.width;
+		h = stage.canvas.height;
+                
+                borderPadding = 10;
+
+                var barHeight = 20;
+                loaderColor = createjs.Graphics.getRGB(24, 247, 247);
+                loaderBar = new createjs.Container();
+
+                bar = new createjs.Shape();
+                bar.graphics.beginFill(loaderColor).drawRect(0, 0, 1, barHeight).endFill();
+                var bgBar = new createjs.Shape();
+                var padding = 3;
+                bgBar.graphics.setStrokeStyle(1).beginStroke(loaderColor).drawRect(-padding / 2, -padding / 2, loaderWidth + padding, barHeight + padding);
+
+                loaderBar.x = (canvas.width - loaderWidth)/2;  // >> 1;
+                loaderBar.y = (canvas.height - barHeight)/2;   // >> 1;
+                loaderBar.addChild(bar, bgBar);
+
+                stage.addChild(loaderBar);
+
+		manifest = [
+			{src: "titleAni.png", id: "_titleAni"},
+			{src: "title_bk.jpg", id: "_titleBk"},
+			{src: "title_play.png", id: "_playBtnBk"},
+                        {src: "tryagainbtn.png", id: "_playOut"},
+                        {src: "tryagainbtnover.png", id: "_playOver"},
+			{src: "title_tutorial.png", id: "_tutorialBtnBk"},
+			{src: "game_bk.png", id: "_gameBk"},
+                        {src: "game_title_big.png", id: "_gameTitleBk"},
+                        {src: "lifeAni.png", id:"_lifeSign"},
+                        {src: "flower1ani.png", id: "_flower1ani"},
+                        {src: "flower2ani.png", id: "_flower2ani"},
+                        {src: "fly.png", id: "_fly"},
+                        {src: "fries.png", id: "_fries"},
+                        {src: "burger.png", id: "_burger"},
+                        {src: "tutorial_bk.png", id: "_tutorialBk"},
+                        {src: "tutorialLvl_over.png", id: "_tutBackBk"},
+                        {src: "cursor.png", id: "_cursor"}
+		];
+
+		loader = new createjs.LoadQueue(false);
+		loader.addEventListener("complete", handleImageComplete);
+                loader.addEventListener("progress", handleImgProgress);
+		loader.loadManifest(manifest, true, "assets/image/");
+	}
+
+	function handleImageComplete() {
+            loader.removeEventListener("complete", handleImageComplete);
+            loader.removeEventListener("progress", handleImgProgress);
+            imageLoaded = true;
+//            if (!createjs.Sound.initializeDefaultPlugins()) {
+//                 return;
+//            }
+            var res = createjs.Sound.registerPlugins([createjs.WebAudioPlugin])
+
+            //examples.showDistractor("content");
+            var assetsPath = "assets/audio/";
+            var sounds = [
+                    {src: "bgMusic.mp3", id: "bgMusic"},
+                    {src: "wrong.mp3", id: "wrongSnd"},
+                    {src: "happy.mp3", id: "rightSnd"}
+            ];
+
+            createjs.Sound.alternateExtensions = ["mp3"];	// add other extensions to try loading if the src file extension is not supported
+            loader.installPlugin(createjs.Sound);
+        //    loader.addEventListener("complete", handleSoundComplete);
+            createjs.Sound.addEventListener("fileload", createjs.proxy(handleSoundComplete, this));
+//            loader.addEventListener("progress", handleSoundProgress);
+//            loader.loadManifest(sounds, true, "assets/audio/");
+            
+            createjs.Sound.registerSounds(sounds, "assets/audio/");
+        }
+        
+        function handleSoundProgress(event){
+            bar.scaleX = event.loaded * loaderWidth*0.3 + loaderWidth*0.7;   // make the image loading consist of the 70% of the total loading progress
+            stage.update();
+        };
+        
+        function handleSoundComplete(event){
+            console.log("All sounds loaded."); 
+            loader.removeEventListener("complete", handleSoundComplete);
+            loader.removeEventListener("progress", handleSoundProgress);
+            var scr = new titleScreen();
+            scr.x = STAGE_WIDTH;
+            tweenDone = false;
+            //createjs.Ticker.timingMode = createjs.Ticker.RAF;
+            createjs.Ticker.addEventListener("tick", tick);
+            var tween = createjs.Tween.get(scr).to({x: 0}, 1000, createjs.Ease.linear).call(tweenComplete);
+            createjs.Tween.get(loaderBar).to({x: -STAGE_WIDTH}, 1000, createjs.Ease.linear);
+        };
+        
+        function handleImgProgress(event){
+            bar.scaleX = event.loaded * loaderWidth*0.7;   // make the image loading consist of the 70% of the total loading progress
+            stage.update();
+        };
+        
+        function tweenComplete(){
+            console.log("tween done");
+            tweenDone = true;
+            stage.update();
+            createjs.Ticker.removeEventListener("tick", tick);
+            console.log("after remove tick listener, the result :" +createjs.Ticker.hasEventListener("tick"));
+        }
+        
+        function tick(){
+            if( !tweenDone){
+                stage.update();
+            }
+        }
+</script>
+</head>
+
+<body onload="init();">
+<header class="EaselJS">
+	<h1>Sprite Sheets</h1>
+
+	<p>
+		An example of defining a <code>SpriteSheet</code>, then displaying it
+		using <code>Sprite</code>. This demo also shows playing named
+		animations (jump and run), setting animation speed, chaining animations,
+		and using <code>Sprite.gotoAndPlay()</code>.
+		Click the stage to initialize a jump, which will continue back into the
+		run when it is complete.
+	</p>
+
+	<p>
+		<strong>Note:</strong> Some browsers can not load images or access pixel
+		data when running local files, and may throw a security error or not
+		work unless the content is running on a server.
+	</p>
+</header>
+
+<div>
+	<canvas id="testCanvas" width="800" height="600"></canvas>
+</div>
+
+</body>
+</html>
